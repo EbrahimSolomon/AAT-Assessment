@@ -1,0 +1,57 @@
+﻿@page "/events"
+@inject HttpClient Http
+
+<div class="container mt-4">
+    <h3 class="text-center mb-4">Available Events</h3>
+
+    @if (events == null)
+    {
+        <p><em>Loading...</em></p>
+    }
+    else if (events.Count == 0)
+    {
+        <p>No events are available at the moment.</p>
+    }
+    else
+    {
+        <table class="table table-striped table-bordered">
+            <thead class="thead-dark">
+                <tr>
+                    <th>Name</th>
+                    <th>Date</th>
+                    <th>Total Seats</th>
+                    <th>Available Seats</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var eventItem in events)
+                {
+                    <tr>
+                        <td>@eventItem.Name</td>
+                        <td>@eventItem.Date.ToString("yyyy-MM-dd")</td>
+                        <td>@eventItem.TotalSeats</td>
+                        <td>@eventItem.AvailableSeats</td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    }
+</div>
+
+@code {
+    private List<Event> events;
+
+    protected override async Task OnInitializedAsync()
+    {
+        events = await Http.GetFromJsonAsync<List<Event>>("api/events");
+    }
+
+    public class Event
+    {
+        public int EventId { get; set; }
+        public string Name { get; set; }
+        public DateTime Date { get; set; }
+        public int TotalSeats { get; set; }
+        public int AvailableSeats { get; set; }
+    }
+}

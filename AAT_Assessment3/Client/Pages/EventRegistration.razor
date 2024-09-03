@@ -1,0 +1,97 @@
+﻿@page "/register"
+@using AAT_Assessment3.Shared
+@inject HttpClient Http
+@inject IJSRuntime JSRuntime
+
+<div class="container mt-4">
+    <h3 class="text-center mb-4">Event Registration</h3>
+
+    @if (events == null)
+    {
+        <p><em>Loading...</em></p>
+    }
+    else
+    {
+        <table class="table table-striped table-bordered">
+            <thead class="thead-dark">
+                <tr>
+                    <th>Name</th>
+                    <th>Date</th>
+                    <th>Total Seats</th>
+                    <th>Available Seats</th>
+                    <th>Action</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var eventItem in events)
+                {
+                    <tr>
+                        <td>@eventItem.Name</td>
+                        <td>@eventItem.Date.ToString("yyyy-MM-dd")</td>
+                        <td>@eventItem.TotalSeats</td>
+                        <td>@eventItem.AvailableSeats</td>
+                        <td>
+                            @if (eventItem.AvailableSeats > 0)
+                            {
+                                <button class="btn btn-primary btn-sm" @onclick="() => Register(eventItem)">Register</button>
+                            }
+                            else
+                            {
+                                <span class="text-danger">Full</span>
+                            }
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    }
+
+    @if (!string.IsNullOrEmpty(registrationMessage))
+    {
+        <div class="alert alert-info mt-3">@registrationMessage</div>
+    }
+</div>
+
+@code {
+    private List<Event> events = new List<Event>();
+    private string userEmail;
+    private string registrationMessage;
+
+    protected override async Task OnInitializedAsync()
+    {
+        try
+        {
+            events = await Http.GetFromJsonAsync<List<Event>>("api/events");
+        }
+        catch (Exception ex)
+        {
+            registrationMessage = $"Error loading events: {ex.Message}";
+        }
+    }
+
+    private async Task Register(Event eventItem)
+    {
+        var userInput = await JSRuntime.InvokeAsync<string>("prompt", "Enter your email to register:");
+        if (string.IsNullOrWhiteSpace(userInput))
+        {
+            registrationMessage = "Registration cancelled.";
+            return;
+        }
+
+        userEmail = userInput;
+
+        // Send the userEmail as a JSON object
+        var response = await Http.PostAsJsonAsync($"api/registration/{eventItem.EventId}/register", new { UserEmail = userEmail });
+
+        if (response.IsSuccessStatusCode)
+        {
+            var result = await response.Content.ReadFromJsonAsync<Registration>();
+            registrationMessage = $"Registration successful! Reference Number: {result.ReferenceNumber}";
+            eventItem.AvailableSeats -= 1; // Update UI without reloading
+        }
+        else
+        {
+            registrationMessage = await response.Content.ReadAsStringAsync();
+        }
+    }
+}

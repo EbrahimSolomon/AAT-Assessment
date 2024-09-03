@@ -1,0 +1,3 @@
+﻿<Project>
+  <Import Project="..\buildMultiTargeting\AAT_Assessment3.Client.props" />
+</Project>

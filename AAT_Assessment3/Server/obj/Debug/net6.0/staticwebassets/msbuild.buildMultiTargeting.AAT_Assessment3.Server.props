@@ -1,0 +1,3 @@
+﻿<Project>
+  <Import Project="..\build\AAT_Assessment3.Server.props" />
+</Project>
